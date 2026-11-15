@@ -18,7 +18,7 @@ pub fn menu_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui) -> f32 {
     let mut edge = if rtl { ui.cursor().right() } else { ui.cursor().left() };
     let lang = crate::i18n::current();
     let mut clicked: Option<String> = None;
-    let t = crate::theme::Tokens::get(ui.ctx());
+    let t = crate::theme::strip_tokens(crate::theme::Tokens::get(ui.ctx()));
     let mut nav = crate::menu_nav::Nav::load(ui.ctx());
     // The keyboard on the bar (#4988): Alt / F10 focus, Alt+letter, mnemonics.
     let mut keys = crate::menu_keys::Keys::load(ui.ctx());

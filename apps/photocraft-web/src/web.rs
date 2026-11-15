@@ -107,7 +107,7 @@ pub fn start() {
                             Some(egui::Color32::from_rgb((n >> 16) as u8, (n >> 8) as u8, n as u8))
                         });
                         let dark = mode == "dark";
-                        theme::set_host_theme(HostTheme { dark, accent: col("ac"), on_accent: col("acf"), ..Default::default() });
+                        theme::set_host_theme(HostTheme { dark, accent: col("ac"), on_accent: col("acf"), bar_bg: col("tb"), bar_fg: col("tf"), bar_hi: col("tu"), ..Default::default() });
                         if dark { ThemeKind::Pro } else { ThemeKind::ProLight }
                     });
                     let kind = host_kind.unwrap_or(ThemeKind::Pro);
