@@ -220,6 +220,10 @@ impl Tokens {
     }
 
     pub fn for_kind(kind: ThemeKind) -> Self {
+        host_override(Tokens::for_kind_base(kind))
+    }
+
+    fn for_kind_base(kind: ThemeKind) -> Self {
         match kind {
             // Sampled from Photoshop 2026's default brightness (raw display values).
             ThemeKind::ProMedium => Tokens {
@@ -1013,6 +1017,50 @@ pub fn semibold(size: f32) -> FontId {
 }
 pub fn mono(size: f32) -> FontId {
     FontId::monospace(size)
+}
+
+/// Ráfaga: colores que el anfitrión (la ventana de Ráfaga) pasa a la aplicación incrustada.
+/// Cada campo es opcional; lo que no llega se queda con la paleta propia de la aplicación.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct HostTheme {
+    pub dark: bool,
+    pub accent: Option<Color32>,
+    pub on_accent: Option<Color32>,
+    pub surface: Option<Color32>,
+    pub bg: Option<Color32>,
+    pub line: Option<Color32>,
+    pub text: Option<Color32>,
+    pub muted: Option<Color32>,
+    pub hover: Option<Color32>,
+    pub soft: Option<Color32>,
+}
+
+static HOST_THEME: std::sync::OnceLock<HostTheme> = std::sync::OnceLock::new();
+
+/// Fija los colores del anfitrión; solo se puede una vez, al arrancar.
+pub fn set_host_theme(h: HostTheme) {
+    let _ = HOST_THEME.set(h);
+}
+
+/// Mezcla `a` con `b` (`t` de 0 a 1).
+fn mix(a: Color32, b: Color32, t: f32) -> Color32 {
+    let m = |x: u8, y: u8| (x as f32 + (y as f32 - x as f32) * t).round() as u8;
+    Color32::from_rgb(m(a.r(), b.r()), m(a.g(), b.g()), m(a.b(), b.b()))
+}
+
+fn host_override(mut t: Tokens) -> Tokens {
+    let Some(h) = HOST_THEME.get() else { return t };
+    if let Some(a) = h.accent {
+        t.accent = a;
+        t.accent_border = a;
+        t.primary_bg = a;
+        if let Some(o) = h.on_accent {
+            t.primary_text = o;
+        }
+        t.accent_soft = mix(a, t.chrome, if t.dark() { 0.65 } else { 0.8 });
+        t.accent_text = if t.dark() { mix(a, Color32::WHITE, 0.35) } else { mix(a, Color32::BLACK, 0.25) };
+    }
+    t
 }
 
 /// Apply a theme to egui's global style and publish its tokens.

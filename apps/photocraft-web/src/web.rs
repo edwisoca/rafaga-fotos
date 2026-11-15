@@ -94,7 +94,24 @@ pub fn start() {
                 options,
                 Box::new(move |cc| {
                     PhotocraftApp::install_type_reset_hooks(&cc.egui_ctx);
-                    PhotocraftApp::setup_context(&cc.egui_ctx, ThemeKind::Pro);
+                    // Ráfaga pasa sus colores (`?theme=dark|light&ac=#rrggbb`): Fotos conserva su espacio de trabajo
+                    // neutro y solo toma el color de acento y el modo claro/oscuro.
+                    let host_kind = query_param("theme").map(|mode| {
+                        use photocraft_ui_egui::theme::{self, HostTheme};
+                        let col = |k: &str| query_param(k).and_then(|v| {
+                            let v = v.trim().trim_start_matches('#').to_string();
+                            if v.len() != 6 {
+                                return None;
+                            }
+                            let n = u32::from_str_radix(&v, 16).ok()?;
+                            Some(egui::Color32::from_rgb((n >> 16) as u8, (n >> 8) as u8, n as u8))
+                        });
+                        let dark = mode == "dark";
+                        theme::set_host_theme(HostTheme { dark, accent: col("ac"), on_accent: col("acf"), ..Default::default() });
+                        if dark { ThemeKind::Pro } else { ThemeKind::ProLight }
+                    });
+                    let kind = host_kind.unwrap_or(ThemeKind::Pro);
+                    PhotocraftApp::setup_context(&cc.egui_ctx, kind);
                     let inbox: Inbox = Arc::default();
                     let place_inbox: PlaceInbox = Arc::default();
                     let served: Served = Arc::default();
@@ -107,7 +124,7 @@ pub fn start() {
                         photocraft_ui_egui::notices::post(&mut app, i18n::t("Some brush presets could not be loaded"), preset_warnings, true, None);
                     }
                     listen_pen(&pen_target, app.stylus.feed.clone());
-                    app.set_theme(&cc.egui_ctx, ThemeKind::Pro);
+                    app.set_theme(&cc.egui_ctx, kind);
                     if let Some(rs) = cc.wgpu_render_state.clone()
                         && !force_cpu
                     {
@@ -276,6 +293,15 @@ fn show_stopped(trap_message: &str) {
 
 fn query() -> String {
     web_sys::window().and_then(|w| w.location().search().ok()).unwrap_or_default()
+}
+
+/// Un parámetro de la dirección (`?clave=valor&…`); solo entiende `%23` (el `#` de los colores).
+fn query_param(key: &str) -> Option<String> {
+    let q = query();
+    q.trim_start_matches('?').split('&').find_map(|kv| {
+        let (k, v) = kv.split_once('=')?;
+        (k == key).then(|| v.replace("%23", "#"))
+    })
 }
 
 /// Reads the served font manifest, if the host has one, and lists its families in the font menus.
