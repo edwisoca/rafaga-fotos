@@ -555,7 +555,24 @@ fn services(inbox: Inbox, place_inbox: PlaceInbox, cursor_pos: photocraft_ui_egu
         place_inbox: Some(place_inbox),
         cursor_pos: Some(cursor_pos),
         // Preferences live in the browser's localStorage.
-        load_prefs: Some(Box::new(|| local_storage()?.get_item(PREFS_KEY).ok().flatten())),
+        load_prefs: Some(Box::new(|| {
+            let text = local_storage()?.get_item(PREFS_KEY).ok().flatten();
+            // Ráfaga elige el idioma de todas sus aplicaciones: `?lang=es|en` manda sobre lo guardado.
+            match query().trim_start_matches('?').split('&').find_map(|kv| kv.strip_prefix("lang=")).map(str::to_owned) {
+                Some(code) => {
+                    let mut v: serde_json::Value = text.as_deref().and_then(|t| serde_json::from_str(t).ok()).unwrap_or_else(|| serde_json::json!({}));
+                    if !v.is_object() {
+                        v = serde_json::json!({});
+                    }
+                    if !v["interface"].is_object() {
+                        v["interface"] = serde_json::json!({});
+                    }
+                    v["interface"]["language"] = serde_json::Value::String(code);
+                    serde_json::to_string(&v).ok()
+                }
+                None => text,
+            }
+        })),
         save_prefs: Some(Box::new(|text: &str| local_storage().ok_or("no localStorage")?.set_item(PREFS_KEY, text).map_err(|e| format!("{e:?}")))),
         load_gpu_memo: None,
         save_gpu_memo: None,

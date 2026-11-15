@@ -54,7 +54,8 @@ fn detect_system_tags() -> Vec<String> {
 
 #[cfg(all(not(test), target_arch = "wasm32"))]
 fn detect_system_tags() -> Vec<String> {
-    Vec::new()
+    // Ráfaga: español por defecto en la versión web (se puede cambiar en las preferencias).
+    vec!["es".to_owned()]
 }
 
 /// The decimal separator of the system's number format (Windows: Region › Decimal symbol), when it
