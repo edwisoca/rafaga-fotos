@@ -27,8 +27,11 @@ pub(super) fn start_screen(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
             });
         });
     } else {
-        let rail_rect = Rect::from_min_size(egui::pos2(area.left() + pad_x, area.top() + pad_y), egui::vec2(rail_w, area.height() - pad_y * 2.0));
-        let content_x = rail_rect.right() + 36.0;
+        let rail_rect = Rect::from_min_size(egui::pos2(area.left() + 24.0, area.top() + 24.0), egui::vec2(rail_w, area.height() - 48.0));
+        // Barra lateral a todo el alto, del color de la aplicación (azul marino en Ráfaga), como Documentos y Hojas.
+        let nav_rect = Rect::from_min_max(area.left_top(), egui::pos2(rail_rect.right() + 24.0, area.bottom()));
+        ui.painter().rect_filled(nav_rect, 0.0, crate::theme::Tokens::get(ui.ctx()).accent);
+        let content_x = nav_rect.right() + 36.0;
         let content_rect = Rect::from_min_max(egui::pos2(content_x, area.top() + pad_y), egui::pos2(area.right() - pad_x, area.bottom() - 16.0));
 
         // 1. Left Navigation Rail
@@ -91,9 +94,9 @@ fn render_start_rail(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32) {
     let (new_rect, new_resp) = ui.allocate_exact_size(egui::vec2(rail_w.min(130.0), 32.0), Sense::click());
     new_resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, new_label));
     let new_resp = new_resp.on_hover_cursor(egui::CursorIcon::PointingHand);
-    let new_bg = if new_resp.hovered() { egui::Color32::from_rgb(41, 131, 245) } else { egui::Color32::from_rgb(26, 115, 232) };
+    let new_bg = if new_resp.hovered() { egui::Color32::from_white_alpha(235) } else { egui::Color32::WHITE };
     ui.painter().rect_filled(new_rect, 4.0, new_bg);
-    ui.painter().text(new_rect.center(), egui::Align2::CENTER_CENTER, new_label, crate::theme::semibold(13.0), egui::Color32::WHITE);
+    ui.painter().text(new_rect.center(), egui::Align2::CENTER_CENTER, new_label, crate::theme::semibold(13.0), t.accent);
     if new_resp.clicked() {
         let fields = app.new_document_fields();
         app.ui.open_dialog(crate::state::DialogKind::NewDocument, fields);
@@ -107,10 +110,10 @@ fn render_start_rail(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32) {
     open_resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, open_label));
     let open_resp = open_resp.on_hover_cursor(egui::CursorIcon::PointingHand);
     if open_resp.hovered() {
-        ui.painter().rect_filled(open_rect, 4.0, t.hover);
+        ui.painter().rect_filled(open_rect, 4.0, egui::Color32::from_white_alpha(40));
     }
-    ui.painter().rect_stroke(open_rect, 4.0, egui::Stroke::new(1.0, t.separator), egui::StrokeKind::Inside);
-    ui.painter().text(open_rect.center(), egui::Align2::CENTER_CENTER, open_label, crate::theme::semibold(13.0), t.text);
+    ui.painter().rect_stroke(open_rect, 4.0, egui::Stroke::new(1.0, egui::Color32::WHITE), egui::StrokeKind::Inside);
+    ui.painter().text(open_rect.center(), egui::Align2::CENTER_CENTER, open_label, crate::theme::semibold(13.0), egui::Color32::WHITE);
     if open_resp.clicked() {
         let _ = app.open_dialog_file();
     }
@@ -120,7 +123,7 @@ fn render_start_rail(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32) {
     // Separator line
     let sep_w = 150.0f32.min(rail_w);
     let (sep_rect, _) = ui.allocate_exact_size(egui::vec2(sep_w, 1.0), Sense::hover());
-    ui.painter().line_segment([sep_rect.min, egui::pos2(sep_rect.max.x, sep_rect.min.y)], egui::Stroke::new(1.0, t.separator));
+    ui.painter().line_segment([sep_rect.min, egui::pos2(sep_rect.max.x, sep_rect.min.y)], egui::Stroke::new(1.0, egui::Color32::from_white_alpha(90)));
 
     ui.add_space(14.0);
 
@@ -135,10 +138,10 @@ fn render_start_rail(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32) {
         app.ui.chrome.home = None;
     }
     let active_bar = Rect::from_min_size(egui::pos2(home_rect.left(), home_rect.center().y - 7.0), egui::vec2(1.5, 14.0));
-    ui.painter().rect_filled(active_bar, 1.0, t.accent);
+    ui.painter().rect_filled(active_bar, 1.0, egui::Color32::WHITE);
     let house_box = Rect::from_center_size(egui::pos2(home_rect.left() + 20.0, home_rect.center().y), egui::vec2(16.0, 16.0));
-    crate::icons::paint(ui, house_box, "house", 16.0, t.text);
-    ui.painter().text(egui::pos2(home_rect.left() + 34.0, home_rect.center().y), egui::Align2::LEFT_CENTER, tl!("Home"), crate::theme::semibold(13.5), t.text);
+    crate::icons::paint(ui, house_box, "house", 16.0, egui::Color32::WHITE);
+    ui.painter().text(egui::pos2(home_rect.left() + 34.0, home_rect.center().y), egui::Align2::LEFT_CENTER, tl!("Home"), crate::theme::semibold(13.5), egui::Color32::WHITE);
 
     ui.add_space(4.0);
 
@@ -147,9 +150,9 @@ fn render_start_rail(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32) {
     let learn_resp = learn_resp.on_hover_cursor(egui::CursorIcon::PointingHand);
     learn_resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tl!("Learn")));
     if learn_resp.hovered() {
-        ui.painter().rect_filled(learn_rect, 4.0, t.hover);
+        ui.painter().rect_filled(learn_rect, 4.0, egui::Color32::from_white_alpha(40));
     }
-    let learn_color = if learn_resp.hovered() { t.text } else { t.text_dim };
+    let learn_color = if learn_resp.hovered() { egui::Color32::WHITE } else { egui::Color32::from_white_alpha(215) };
     let sparkle_box = Rect::from_center_size(egui::pos2(learn_rect.left() + 20.0, learn_rect.center().y), egui::vec2(16.0, 16.0));
     crate::icons::paint(ui, sparkle_box, "sparkles", 16.0, learn_color);
     ui.painter().text(
@@ -170,7 +173,7 @@ fn render_start_rail(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32) {
     ui.add_space(spacer);
 
     let (b_sep_rect, _) = ui.allocate_exact_size(egui::vec2(sep_w, 1.0), Sense::hover());
-    ui.painter().line_segment([b_sep_rect.min, egui::pos2(b_sep_rect.max.x, b_sep_rect.min.y)], egui::Stroke::new(1.0, t.separator));
+    ui.painter().line_segment([b_sep_rect.min, egui::pos2(b_sep_rect.max.x, b_sep_rect.min.y)], egui::Stroke::new(1.0, egui::Color32::from_white_alpha(90)));
 
     ui.add_space(8.0);
 
@@ -184,9 +187,10 @@ fn render_rail_link(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32, lab
     let (rect, resp) = ui.allocate_exact_size(egui::vec2(rail_w, 28.0), Sense::click());
     let resp = resp.on_hover_cursor(egui::CursorIcon::PointingHand).on_hover_text(url);
     if resp.hovered() {
-        ui.painter().rect_filled(rect, 4.0, t.hover);
+        ui.painter().rect_filled(rect, 4.0, egui::Color32::from_white_alpha(40));
     }
-    let color = if resp.hovered() { t.text } else { t.text_dim };
+    let color = if resp.hovered() { egui::Color32::WHITE } else { egui::Color32::from_white_alpha(215) };
+    let _ = &t;
     let icon_box = Rect::from_center_size(egui::pos2(rect.left() + 20.0, rect.center().y), egui::vec2(14.0, 14.0));
     crate::icons::paint(ui, icon_box, icon_name, 14.0, color);
     ui.painter().text(egui::pos2(rect.left() + 34.0, rect.center().y), egui::Align2::LEFT_CENTER, label, crate::theme::medium(12.0), color);
